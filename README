@@ -1,0 +1,25 @@
+Tomcat manager software controls opening war files and deploying them to the tomcat root.
+
+Author:
+   Justin Walrath <walrathjaw@gmail.com>
+
+Software to be installed prior:
+   1. Apache2/Tomcat7 (obviously)
+   2. Unzip
+   3. mono (c#/.net framework for linux)
+
+Version 1.0
+   As of version 1.0 the default install directories are as listed below.
+	In subsequent versions will be updating it to use a config file
+
+   Tomcat:
+	   webapps dir: "/var/lib/tomcat7/webapps/"
+		This is where the c# program is currently pointed to.
+
+	Share Folder:
+	   location:    "/usr/local/tomshare/"
+		permissions: "777" So all users can deploy to it.
+		   *Might change later to handle groups.
+
+Version 1.1
+   Will be including an update to help manage a less hard coded configuration.
