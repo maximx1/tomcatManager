@@ -8,17 +8,40 @@ Software to be installed prior:
    2. Unzip
    3. mono (c#/.net framework for linux)
 
+To Install->
+   1. Set up the required software ^
+   2. Install the the tomcatmanager.exe somewhere out of reach from 
+      regular users (I used "/root/")
+   3. Configure the C# program
+      a. With version 1.0 Recompile the app with the tomcat webapp directory, 
+         the share directory, and the temporary storage location ("/tmp/" Should work for this.)
+      b. With version 1.1 There will be a config file with this information.
+   4. Set up a crontab job as root.
+      a. Using "sudo crontab -e" or being root and using "crontab -e"
+      b. Add this line to the crontab file. -> "* * * * * /<locationOfExecutable>/tomcatmanager.exe"
+         *Note this will run it every minute. You can change the timings. Google crontab
+
+To Use:
+   Users will just pass their .war file into the the shared directory.
+   The crontab schedule will then update it with tomcat everytime the update job fires.
+   No further administration is needed.
+
+Limitations:
+   1. You should have users create unique names for their war files so as to avoid collision with other projects.
+   2. This only adds new .war files or replaces previously deployed projects.
+      It will not delete projects that are present in the tomcat webapps directory that aren't present in the share.
+
 Version 1.0
    As of version 1.0 the default install directories are as listed below.
 	In subsequent versions will be updating it to use a config file
 
    Tomcat:
 	   webapps dir: "/var/lib/tomcat7/webapps/"
-		This is where the c# program is currently pointed to.
+      This is where the c# program is currently pointed to.
 
 	Share Folder:
 	   location:    "/usr/local/tomshare/"
-		permissions: "777" So all users can deploy to it.
+      permissions: "777" So all users can deploy to it.
 		   *Might change later to handle groups.
 
 Version 1.1

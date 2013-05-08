@@ -77,7 +77,7 @@ namespace tomcatmanager
 		public FileManager()
 		{
 			ShareDirectory = @"/usr/local/tomshare/";
-			TomcatRoot = @"/home/maximx1/admin/webapps/";
+			TomcatRoot = @"/var/lib/tomcat7/webapps/";
 			TmpDir = @"/tmp/";
 			UnwrapDir = TmpDir + @"War_Is_Unfolding/";
 
@@ -86,10 +86,6 @@ namespace tomcatmanager
 			LoadWarFiles();
 			LoadDeployed();
 			IntersectingProjectNames = _WarNames.Select(x => x.Substring(0, x.Length - 4)).Intersect(_DeployedWarNames).ToList();
-
-			//Console.WriteLine("Deployed: " + Directory.GetCreationTime(TomcatRoot + IntersectingProjectNames.FirstOrDefault()));
-			//Console.WriteLine("Share: " + Directory.GetCreationTime(ShareDirectory + IntersectingProjectNames.FirstOrDefault() + ".war"));
-			//Console.WriteLine(Directory.GetCreationTime(TomcatRoot + IntersectingProjectNames.FirstOrDefault()) < Directory.GetCreationTime(ShareDirectory + IntersectingProjectNames.FirstOrDefault() + ".war"));
 		}
 
 		/// <summary>
@@ -127,10 +123,7 @@ namespace tomcatmanager
 		/// </summary>
 		public void Deploy()
 		{
-			if(Directory.Exists(UnwrapDir))
-			{
-				Directory.Delete(UnwrapDir, true);
-			}
+			this.CleanUp();
 
 			Directory.CreateDirectory(UnwrapDir);
 
@@ -156,7 +149,10 @@ namespace tomcatmanager
 			}
 
 			//Deploys all the others
-			foreach(string projectName in _WarNames.Where(x => !IntersectingProjectNames.Contains(x)))
+			foreach(string projectName in _WarNames
+			        .Where(x => !IntersectingProjectNames
+			        .Contains(x.Substring(0, x.Length - 4)))
+			        .Select(x => x.Substring(0, x.Length - 4)))
 			{
 				Process job = new Process();
 				job.StartInfo = new ProcessStartInfo("unzip", ShareDirectory + projectName + ".war -d " + UnwrapDir + projectName);
@@ -168,6 +164,19 @@ namespace tomcatmanager
 
 				//Alert that things are deployed.
 				Console.WriteLine("Deployed: " + projectName);
+			}
+
+			this.CleanUp();
+		}
+
+		/// <summary>
+		/// Cleans up the used directories.
+		/// </summary>
+		public void CleanUp()
+		{
+			if(Directory.Exists(UnwrapDir))
+			{
+				Directory.Delete(UnwrapDir, true);
 			}
 		}
 	}
