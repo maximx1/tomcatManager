@@ -3,11 +3,18 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace tomcatmanager
 {
 	public class FileManager
 	{
+		/// <summary>
+		/// The Settings file.
+		/// </summary>
+		private const string SettingsFile = "tomcatman.config";
+
 		/// <summary>
 		/// The share directory.
 		/// </summary>
@@ -76,10 +83,7 @@ namespace tomcatmanager
 		/// </summary>
 		public FileManager()
 		{
-			ShareDirectory = @"/usr/local/tomshare/";
-			TomcatRoot = @"/var/lib/tomcat7/webapps/";
-			TmpDir = @"/tmp/";
-			UnwrapDir = TmpDir + @"War_Is_Unfolding/";
+			LoadSettings();
 
 			_WarNames = new List<string>();
 
@@ -110,12 +114,97 @@ namespace tomcatmanager
 		{
 			if(!Directory.Exists(TomcatRoot))
 			{
-				Console.WriteLine("Directory not found.");
+				Console.WriteLine("Directory not found.\n Try running with the -c to create settings.");
 				Environment.Exit(0x1);
 			}
 
 			_DeployedWarNames = Directory.GetDirectories(TomcatRoot).Where(x => !x.ToUpper().EndsWith("ROOT")).ToList();
 			_DeployedWarNames = _DeployedWarNames.Select(x => x.Substring(TomcatRoot.Length)).ToList();
+		}
+
+		/// <summary>
+		/// Loads the settings from the config file.
+		/// </summary>
+		private void LoadSettings()
+		{
+			if(!File.Exists(SettingsFile))
+			{
+				Console.WriteLine("Settings file hasn't been created.\n Try running with the -c to create settings.");
+				Environment.Exit(1);
+			}
+
+			XElement settings = XElement.Load(SettingsFile);
+
+			var serverProperties = settings.Descendants()
+                           .Where(s => s.HasElements == false)
+                           .ToDictionary(s => s.Name.ToString(), s => s.Value.ToString());
+
+			//Check for the share directory.
+			if(!serverProperties.TryGetValue("shareDir", out ShareDirectory))
+			{
+				Console.WriteLine("There was an issue with the file. \n Try running with the -c to re-create settings.");
+				Environment.Exit(1);
+			}
+			if(ShareDirectory != "" && !ShareDirectory.EndsWith("/"))
+			ShareDirectory += "/";
+
+			//Check for the webapps Directory.
+			if(!serverProperties.TryGetValue("tomcatDir", out TomcatRoot))
+			{
+				Console.WriteLine("There was an issue with the file. \n Try running with the -c to re-create settings.");
+				Environment.Exit(1);
+			}
+			if(TomcatRoot != "" && !TomcatRoot.EndsWith("/"))
+			TomcatRoot += "/";
+
+			//Check for the tmp Directory.
+			if(!serverProperties.TryGetValue("tmpDir", out TmpDir))
+			{
+				Console.WriteLine("There was an issue with the file. \n Try running with the -c to re-create settings.");
+				Environment.Exit(1);
+			}
+			if(TmpDir != "" && !TmpDir.EndsWith("/"))
+			TmpDir += "/";
+
+			//Set up the Temporary unfolding directory.
+			UnwrapDir = TmpDir + @"War_Is_Unfolding/";
+
+			Console.WriteLine(ShareDirectory);
+			Console.WriteLine(TomcatRoot);
+			Console.WriteLine(TmpDir);
+			Console.WriteLine(UnwrapDir);
+		}
+
+		/// <summary>
+		/// Configure this instance.
+		/// </summary>
+		public static void Configure()
+		{
+			String defaultInput = @"/usr/local/tomshare/";
+			String input = "";
+			Console.Write("Enter location of the share directory(Default:" + defaultInput + "): ");
+			input = Console.ReadLine();
+			if(input != "" && !input.EndsWith("/"))
+				input += "/";
+			XElement exelm = new XElement("settings", new XElement("shareDir", (input == "" ? defaultInput : input)));
+
+			defaultInput = @"/var/lib/tomcat7/webapps/";
+			input = "";
+			Console.Write("Enter location of the Tomcat webapps(Default:" + defaultInput + "): ");
+			input = Console.ReadLine();
+			if(input != "" && !input.EndsWith("/"))
+				input += "/";
+			exelm.Add(new XElement("tomcatDir", (input == "" ? defaultInput : input)));
+
+			defaultInput = @"/tmp/";
+			input = "";
+			Console.Write("Enter location tmp directory(Default:" + defaultInput + "): ");
+			input = Console.ReadLine();
+			if(input != "" && !input.EndsWith("/"))
+				input += "/";
+			exelm.Add(new XElement("tmpDir", (input == "" ? defaultInput : input)));
+
+			exelm.Save(SettingsFile);
 		}
 
 		/// <summary>
